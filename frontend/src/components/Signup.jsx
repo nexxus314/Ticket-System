@@ -10,7 +10,6 @@ export default function Signup({ setPage }) {
       headers: {
         "Content-Type": "application/json",
       },
-      // Do not send a client-controlled `role`—server will assign role based on ADMIN_SECRET
       body: JSON.stringify({ email, password }),
     });
 
@@ -23,7 +22,8 @@ export default function Signup({ setPage }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50">
+      <h1 className="text-4xl font-bold mb-6">Ticket Supporter</h1>
       <div className="w-full max-w-md bg-white rounded-xl shadow px-6 py-8">
         <h2 className="text-2xl font-semibold mb-4">Signup</h2>
 
