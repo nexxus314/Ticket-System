@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function Login({ setToken, setRole, setPage }) {
+export default function Login({ setToken, setRole, setUserEmail, setPage }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -18,14 +18,15 @@ export default function Login({ setToken, setRole, setPage }) {
     if (data.token) {
       setToken(data.token);
       setRole(data.role || "user");
+      setUserEmail(email);
     } else {
       alert("Login failed");
     }
   }
 
   return (
-    
-    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50">
+      <h1 className="text-4xl font-bold mb-6">Ticket Supporter</h1>
       <div className="w-full max-w-md bg-white rounded-xl shadow px-6 py-8">
         <h2 className="text-2xl font-semibold mb-4">Login</h2>
 

@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
+import Comments from "./Comments";
 
-export default function UserDashboard({ token, logout }) {
+export default function UserDashboard({ token, logout, userEmail }) {
   const [tickets, setTickets] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-
+  const [expandedTicket, setExpandedTicket] = useState(null);
   useEffect(() => {
     fetchMyTickets();
   }, []);
@@ -21,6 +22,11 @@ export default function UserDashboard({ token, logout }) {
   }
 
   async function createTicket() {
+    if (!title.trim() || !description.trim()) {
+      alert("Please fill in all fields");
+      return;
+    }
+
     await fetch("http://localhost:5000/tickets", {
       method: "POST",
       headers: {
@@ -30,12 +36,16 @@ export default function UserDashboard({ token, logout }) {
       body: JSON.stringify({ title, description }),
     });
 
+    setTitle("");
+    setDescription("");
     fetchMyTickets();
   }
 
   return (
     <div className="min-h-screen p-4 bg-slate-50">
-      <div className="app-inner bg-white rounded-xl shadow p-6">
+      <div className="mx-auto max-w-6xl">
+        <h1 className="text-4xl font-bold mb-6">Ticket Supporter</h1>
+        <div className="app-inner bg-white rounded-xl shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Your Tickets</h2>
           <button
@@ -48,11 +58,13 @@ export default function UserDashboard({ token, logout }) {
 
         <div className="mb-4">
           <input
+            value={title}
             className="w-full border border-slate-200 rounded px-3 py-2 mb-2 text-sm"
             placeholder="Ticket Title"
             onChange={(e) => setTitle(e.target.value)}
           />
           <input
+            value={description}
             className="w-full border border-slate-200 rounded px-3 py-2 mb-2 text-sm"
             placeholder="Description"
             onChange={(e) => setDescription(e.target.value)}
@@ -68,19 +80,37 @@ export default function UserDashboard({ token, logout }) {
         <ul className="space-y-3">
           {tickets.map((t) => (
             <li
-              key={t.id}
-              className="p-3 border border-slate-100 rounded flex items-center justify-between"
+              key={t._id}
+              className="p-3 border border-slate-100 rounded"
             >
-              <div>
-                <div className="font-medium">{t.title}</div>
-                <div className="text-sm text-slate-500">{t.description}</div>
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() =>
+                  setExpandedTicket(
+                    expandedTicket === t._id ? null : t._id
+                  )
+                }
+              >
+                <div>
+                  <div className="font-medium">{t.title}</div>
+                  <div className="text-sm text-slate-500">{t.description}</div>
+                </div>
+                <div className="text-sm text-slate-600">
+                  {t.status ?? "OPEN"}
+                </div>
               </div>
-              <div className="text-sm text-slate-600">
-                {t.status ?? "OPEN"}
-              </div>
+
+              {expandedTicket === t._id && (
+                <Comments
+                  ticketId={t._id}
+                  token={token}
+                  userEmail={userEmail}
+                />
+              )}
             </li>
           ))}
         </ul>
+      </div>
       </div>
     </div>
   );

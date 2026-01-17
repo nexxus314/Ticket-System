@@ -1,55 +1,95 @@
-
 const express = require("express");
-const ticketStore = require("../models/TicketStore");
+const Ticket = require("../models/TicketStore");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/", authMiddleware, (req, res) => {
-  const { title, description } = req.body || {};
+router.post("/", authMiddleware, async (req, res) => {
+  try {
+    const { title, description } = req.body || {};
 
-  const ticket = {
-    id: ticketStore.length + 1,
-    title,
-    description,
-    status: "OPEN",
-    userId: req.user.id,
-    createdAt: new Date(),
-  };
+    const ticket = new Ticket({
+      title,
+      description,
+      status: "OPEN",
+      userId: req.user.id,
+    });
 
-  ticketStore.push(ticket);
-  return res.json(ticket);
+    await ticket.save();
+    return res.json(ticket);
+  } catch (error) {
+    console.error("Create ticket error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 });
 
-router.get("/", authMiddleware, (req, res) => {
-  const validUserTickets = ticketStore.filter((t) => t.userId === req.user.id);
-  return res.json(validUserTickets);
+router.get("/", authMiddleware, async (req, res) => {
+  try {
+    const validUserTickets = await Ticket.find({ userId: req.user.id });
+    return res.json(validUserTickets);
+  } catch (error) {
+    console.error("Get user tickets error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 });
 
-router.get("/total", authMiddleware, (req, res) => {
-  if (req.user.role !== "admin") {
-    return res.status(403).json({ message: "Access Denied" });
+router.get("/total", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access Denied" });
+    }
+    const allTickets = await Ticket.find();
+    return res.json(allTickets);
+  } catch (error) {
+    console.error("Get total tickets error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
-  return res.json(ticketStore);
 });
 
-router.patch("/:id", authMiddleware, (req, res) => {
-  if (req.user.role !== "admin") {
-    return res.status(403).json({ message: "Access Denied" });
+router.patch("/:id", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access Denied" });
+    }
+
+    if (!req.body || typeof req.body.status === "undefined") {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
+    const ticket = await Ticket.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      { new: true }
+    );
+
+    if (!ticket) {
+      return res.status(404).json({ message: "Ticket not found" });
+    }
+
+    return res.json(ticket);
+  } catch (error) {
+    console.error("Update ticket error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
+});
 
-  const ticket = ticketStore.find((t) => t.id === parseInt(req.params.id, 10));
-  if (!ticket) {
-    return res.status(404).json({ message: "Ticket not found" });
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access Denied" });
+    }
+
+    const ticket = await Ticket.findByIdAndDelete(req.params.id);
+
+    if (!ticket) {
+      return res.status(404).json({ message: "Ticket not found" });
+    }
+
+    return res.json({ message: "Ticket deleted successfully" });
+  } catch (error) {
+    console.error("Delete ticket error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
-
-  if (!req.body || typeof req.body.status === "undefined") {
-    return res.status(400).json({ message: "Status is required" });
-  }
-
-  ticket.status = req.body.status;
-
-  return res.json(ticket);
 });
 
 module.exports = router;
